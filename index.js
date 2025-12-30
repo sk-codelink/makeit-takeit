@@ -17,12 +17,27 @@ let userName = '';
 let templateWidth = 0;
 let templateHeight = 0;
 
-// Get canvas and context
-const canvas = document.getElementById('previewCanvas');
-const ctx = canvas.getContext('2d');
+// Wait for DOM to be ready
+let canvas, ctx;
 
-// Function to position overlay inputs exactly where content will be placed
-function positionOverlays() {
+document.addEventListener('DOMContentLoaded', function() {
+  // Get canvas and context
+  canvas = document.getElementById('previewCanvas');
+  if (!canvas) {
+    console.error('Canvas element not found');
+    return;
+  }
+  ctx = canvas.getContext('2d');
+  
+  // Initialize after DOM is ready
+  initializeApp();
+});
+
+function initializeApp() {
+  if (!canvas || !ctx) return;
+
+  // Function to position overlay inputs exactly where content will be placed
+  function positionOverlays() {
   if (!canvas || canvas.offsetWidth === 0 || templateWidth === 0 || templateHeight === 0) return;
   
   const canvasRect = canvas.getBoundingClientRect();
@@ -80,10 +95,10 @@ function positionOverlays() {
     nameInputOverlay.style.top = (canvasTop + nameYOnCanvas) + 'px';
     nameInputOverlay.style.width = estimatedTextWidth + 'px';
   }
-}
+  }
 
-// Function to calculate optimal canvas display size
-function calculateCanvasSize() {
+  // Function to calculate optimal canvas display size
+  function calculateCanvasSize() {
   if (templateWidth === 0 || templateHeight === 0) return;
   
   const viewportWidth = window.innerWidth;
@@ -109,45 +124,56 @@ function calculateCanvasSize() {
   canvas.style.maxWidth = '100%';
   canvas.style.maxHeight = '100%';
   
-  // Reposition overlays after resize
-  setTimeout(positionOverlays, 50);
-}
+    // Reposition overlays after resize
+    setTimeout(positionOverlays, 50);
+  }
 
-// Load template image
-const templateImg = new Image();
-templateImg.crossOrigin = 'anonymous';
-templateImg.onload = function() {
-  templateImage = this;
-  // Use template's original dimensions
-  templateWidth = this.naturalWidth;
-  templateHeight = this.naturalHeight;
-  
-  // Set canvas to template's original size (for quality)
-  canvas.width = templateWidth;
-  canvas.height = templateHeight;
-  
-  // Calculate and set optimal display size
-  calculateCanvasSize();
-  
-  // Wait for canvas to render, then position overlays
-  setTimeout(() => {
-    positionOverlays();
-    updatePreview();
-  }, 100);
-  
-  // Reposition on window resize
-  window.addEventListener('resize', function() {
+  // Load template image
+  const templateImg = new Image();
+  // Remove crossOrigin for GitHub Pages compatibility
+  templateImg.onload = function() {
+    templateImage = this;
+    // Use template's original dimensions
+    templateWidth = this.naturalWidth;
+    templateHeight = this.naturalHeight;
+    
+    // Set canvas to template's original size (for quality)
+    canvas.width = templateWidth;
+    canvas.height = templateHeight;
+    
+    // Calculate and set optimal display size
     calculateCanvasSize();
-    positionOverlays();
-  });
-};
-templateImg.src = 'template.png';
+    
+    // Wait for canvas to render, then position overlays
+    setTimeout(() => {
+      positionOverlays();
+      updatePreview();
+    }, 100);
+    
+    // Reposition on window resize
+    window.addEventListener('resize', function() {
+      calculateCanvasSize();
+      positionOverlays();
+    });
+  };
 
-// Name input handler
-document.getElementById('nameInput').addEventListener('input', function(e) {
-  userName = e.target.value;
-  updatePreview();
-});
+  templateImg.onerror = function() {
+    console.error('Failed to load template image. Trying alternative path...');
+    // Try alternative path for GitHub Pages
+    templateImg.src = 'template.png';
+  };
+
+  // Use relative path that works on both local and GitHub Pages
+  templateImg.src = './template.png';
+
+  // Name input handler
+  const nameInput = document.getElementById('nameInput');
+  if (nameInput) {
+    nameInput.addEventListener('input', function(e) {
+      userName = e.target.value;
+      updatePreview();
+    });
+  }
 
 // Position adjustment sliders (commented out - controls are hidden)
 /*
@@ -182,25 +208,28 @@ document.getElementById('nameYSlider').addEventListener('input', function(e) {
 });
 */
 
-// Image input handler
-document.getElementById('imageInput').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const img = new Image();
-      img.onload = function() {
-        userImage = this;
-        updatePreview();
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
+  // Image input handler
+  const imageInput = document.getElementById('imageInput');
+  if (imageInput) {
+    imageInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            userImage = this;
+            updatePreview();
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
   }
-});
 
-// Update preview function
-function updatePreview() {
+  // Update preview function
+  function updatePreview() {
   if (!templateImage || templateWidth === 0 || templateHeight === 0) return;
   
   // Clear canvas
@@ -296,13 +325,19 @@ function updatePreview() {
       ctx.restore();
     }
   }
-}
+  }
 
-// Download button handler
-document.getElementById('downloadBtn').addEventListener('click', function() {
-  const link = document.createElement('a');
-  link.download = userName + '-image.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-});
+  // Download button handler
+  const downloadBtn = document.getElementById('downloadBtn');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', function() {
+      if (!canvas) return;
+      const link = document.createElement('a');
+      const fileName = userName ? userName + '-image.png' : 'generated-image.png';
+      link.download = fileName;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+}
 
