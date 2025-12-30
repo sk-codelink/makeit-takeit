@@ -219,33 +219,35 @@ function updatePreview() {
   
   // Draw user image in round area if available
   if (userImage) {
-    // Create circular clipping path
+    // Create circular clipping path for rounded image
     ctx.save();
     ctx.beginPath();
     ctx.arc(roundImageX, roundImageY, roundImageRadius, 0, Math.PI * 2);
     ctx.clip();
     
-    // Calculate image dimensions to fill the circle while maintaining aspect ratio
+    // Calculate image dimensions to cover the entire circle (fill mode)
     const imgSize = roundImageRadius * 2;
     const imgAspect = userImage.width / userImage.height;
-    let drawWidth = imgSize;
-    let drawHeight = imgSize;
+    const circleAspect = 1; // Circle is 1:1
     
-    // Maintain aspect ratio and center perfectly
-    if (imgAspect > 1) {
-      // Image is wider than tall
-      drawHeight = imgSize / imgAspect;
-      drawWidth = imgSize;
-    } else {
-      // Image is taller than wide
-      drawWidth = imgSize * imgAspect;
+    let drawWidth, drawHeight, drawX, drawY;
+    
+    // Use cover mode: scale image to fill circle completely
+    if (imgAspect > circleAspect) {
+      // Image is wider - scale to fit height, crop width
       drawHeight = imgSize;
+      drawWidth = imgSize * imgAspect;
+      drawX = roundImageX - drawWidth / 2;
+      drawY = roundImageY - drawHeight / 2;
+    } else {
+      // Image is taller - scale to fit width, crop height
+      drawWidth = imgSize;
+      drawHeight = imgSize / imgAspect;
+      drawX = roundImageX - drawWidth / 2;
+      drawY = roundImageY - drawHeight / 2;
     }
     
-    // Center the image within the circle
-    const drawX = roundImageX - drawWidth / 2;
-    const drawY = roundImageY - drawHeight / 2;
-    
+    // Draw the image to fill the circle
     ctx.drawImage(userImage, drawX, drawY, drawWidth, drawHeight);
     ctx.restore();
     
