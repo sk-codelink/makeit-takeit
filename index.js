@@ -302,12 +302,31 @@ document.getElementById('nameYSlider').addEventListener('input', function(e) {
     // Use a font that supports Gujarati characters - scale font size based on template
     const fontSize = Math.max(22, templateWidth * 0.038); // ~3.8% of width, minimum 22px
     ctx.font = `bold ${fontSize}px "Noto Sans Gujarati", "Arial Unicode MS", Arial, sans-serif`;
-    ctx.fillStyle = '#FFFFFF'; // White text on dark teal banner
+    
+    // Use dark red color matching button background
+    ctx.fillStyle = '#8B0000'; // Dark red matching button gradient
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Measure text to ensure proper centering
+    // Measure text width
     const textMetrics = ctx.measureText(userName);
+    const textWidth = textMetrics.width;
+    
+    // Calculate extra width for underline based on name length
+    // Add 15-20% extra width on each side
+    const extraWidth = textWidth * 0.2; // 20% extra on each side
+    const underlineWidth = textWidth + (extraWidth * 2);
+    const underlineY = nameY + (fontSize * 0.4); // Position below text
+    
+    // Draw underline with extra width on both sides
+    ctx.strokeStyle = '#8B0000'; // Same dark red color
+    ctx.lineWidth = Math.max(2, fontSize * 0.08); // Underline thickness based on font size
+    ctx.beginPath();
+    ctx.moveTo(nameX - underlineWidth / 2, underlineY);
+    ctx.lineTo(nameX + underlineWidth / 2, underlineY);
+    ctx.stroke();
+    
+    // Draw the text
     ctx.fillText(userName, nameX, nameY);
     ctx.restore();
     
